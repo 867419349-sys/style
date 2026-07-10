@@ -1,0 +1,22 @@
+// AUTO-GENERATED. 每种风格文件夹里的图片清单。
+export const STYLE_IMAGES: Record<string, string[]> = {
+  "naive-design": [ "/styles/naive-design/1.jpg", "/styles/naive-design/2.jpg", "/styles/naive-design/3.jpg", "/styles/naive-design/4.jpg", "/styles/naive-design/5.jpg", "/styles/naive-design/6.jpg" ],
+  "dark-tonalism": [ "/styles/dark-tonalism/1.jpg", "/styles/dark-tonalism/2.jpg", "/styles/dark-tonalism/3.jpg", "/styles/dark-tonalism/4.jpg", "/styles/dark-tonalism/5.jpg", "/styles/dark-tonalism/6.jpg" ],
+  "pop-art": [ "/styles/pop-art/1.jpg", "/styles/pop-art/2.jpg", "/styles/pop-art/3.jpg", "/styles/pop-art/4.jpg", "/styles/pop-art/5.jpg" ],
+  "surrealism": [ "/styles/surrealism/1.jpg", "/styles/surrealism/2.jpg", "/styles/surrealism/3.jpg", "/styles/surrealism/4.jpg" ],
+  "brutalism": [ "/styles/brutalism/1.jpg", "/styles/brutalism/2.jpg", "/styles/brutalism/3.jpg" ],
+  "gothic": [ "/styles/gothic/1.jpg", "/styles/gothic/2.jpg", "/styles/gothic/3.jpg", "/styles/gothic/4.jpg", "/styles/gothic/5.jpg" ],
+  "mixed-media": [ "/styles/mixed-media/1.jpg", "/styles/mixed-media/2.jpg", "/styles/mixed-media/3.jpg", "/styles/mixed-media/4.jpg" ],
+  "minimalism": [ "/styles/minimalism/1.jpg", "/styles/minimalism/2.jpg" ],
+  "diffused-gradient": [ "/styles/diffused-gradient/1.jpg", "/styles/diffused-gradient/2.jpg" ],
+  "collage": [ "/styles/collage/1.jpg", "/styles/collage/2.jpg", "/styles/collage/3.jpg" ],
+  "cybercore": [ "/styles/cybercore/1.jpg", "/styles/cybercore/2.jpg", "/styles/cybercore/3.jpg", "/styles/cybercore/4.jpg", "/styles/cybercore/5.jpg" ],
+  "girly-kawaii": [ "/styles/girly-kawaii/1.jpg", "/styles/girly-kawaii/2.jpg", "/styles/girly-kawaii/3.jpg", "/styles/girly-kawaii/4.jpg", "/styles/girly-kawaii/5.jpg" ],
+  "utilitarian": [ "/styles/utilitarian/1.jpg", "/styles/utilitarian/2.jpg", "/styles/utilitarian/3.jpg", "/styles/utilitarian/4.jpg", "/styles/utilitarian/5.jpg", "/styles/utilitarian/6.jpg", "/styles/utilitarian/7.jpg" ],
+  "acid-metal": [ "/styles/acid-metal/1.jpg", "/styles/acid-metal/2.jpg", "/styles/acid-metal/3.jpg", "/styles/acid-metal/4.jpg", "/styles/acid-metal/5.jpg", "/styles/acid-metal/6.jpg", "/styles/acid-metal/7.jpg", "/styles/acid-metal/8.jpg" ],
+  "graffiti": [ "/styles/graffiti/1.jpg", "/styles/graffiti/2.jpg" ],
+  "futuristic-digital": [ "/styles/futuristic-digital/1.jpg", "/styles/futuristic-digital/2.jpg", "/styles/futuristic-digital/3.jpg", "/styles/futuristic-digital/4.jpg" ],
+  "vaporwave": [ "/styles/vaporwave/1.jpg", "/styles/vaporwave/2.jpg", "/styles/vaporwave/3.jpg" ],
+  "steampunk": [ "/styles/steampunk/1.jpg", "/styles/steampunk/2.jpg", "/styles/steampunk/3.jpg" ],
+  "medieval": [ "/styles/medieval/1.jpg", "/styles/medieval/2.jpg", "/styles/medieval/3.jpg" ],
+};

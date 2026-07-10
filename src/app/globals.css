@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f5f2ec;
+  --surface: #ffffff;
+  --surface-2: #efeae1;
+  --ink: #1c1c1c;
+  --muted: #6b6660;
+  --line: #e4dece;
+  --border-strong: #28282b;
+  --accent: #e67e5b;
+  --accent-2: #f4c2a1;
+  --accent-ink: #b8543a;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-border-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-accent-ink: var(--accent-ink);
+  --font-sans: var(--font-sans-var);
+  --font-display: var(--font-display-var);
+  --font-mono: var(--font-mono-var);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans-var), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--accent-2);
+  color: var(--ink);
+}
+
+.font-display {
+  font-family: var(--font-display-var), Georgia, "Songti SC", serif;
+}
+
+.font-mono {
+  font-family: var(--font-mono-var), ui-monospace, "SFMono-Regular", monospace;
+}
+
+.scroll-slim::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-slim::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 8px;
+}
+.scroll-slim::-webkit-scrollbar-track {
+  background: transparent;
+}
