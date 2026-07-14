@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { RefreshCw, Wand2 } from "lucide-react";
 import type { ModelResult, StyleResult } from "@/types";
 import { useI18n } from "@/lib/i18n";
-import { MODELS, generateWithModel, mockGeneratedImage, seedFor } from "@/lib/imagegen";
+import { MODELS, generateWithModel } from "@/lib/imagegen";
 import { ModelCard } from "./ModelCard";
 
 export function ModelCompareGrid({ style }: { style: StyleResult | null }) {
@@ -28,21 +28,20 @@ export function ModelCompareGrid({ style }: { style: StyleResult | null }) {
       Object.fromEntries(
         MODELS.map((m) => [
           m.id,
-          { modelId: m.id, status: "loading", image: "", seed: 0 } as ModelResult,
+          { modelId: m.id, status: "loading", image: "" } as ModelResult,
         ]),
       ),
     );
     await Promise.all(
       MODELS.map(async (m) => {
-        await generateWithModel();
-        const seed = seedFor(style.id, m.id);
+        const r = await generateWithModel(style.prompt, m.apiModel);
         setResults((prev) => ({
           ...prev,
           [m.id]: {
             modelId: m.id,
-            status: "done",
-            image: mockGeneratedImage(style, m, seed),
-            seed,
+            status: r.url ? "done" : "error",
+            image: r.url ?? "",
+            error: r.error,
           },
         }));
       }),
@@ -100,8 +99,8 @@ export function ModelCompareGrid({ style }: { style: StyleResult | null }) {
           </div>
           <p className="mt-4 text-[11px] text-muted">
             {pick(
-              "* 原型阶段的对比图为根据配色合成的占位图，接入真实文生图 API 后将替换为模型实际生成结果。",
-              "* Prototype comparison images are palette-based placeholders; they will be replaced by real model outputs once a text-to-image API is connected.",
+              "* 由硅基流动（SiliconFlow）多模型真实生成；图片为临时链接，约 24 小时后过期，需要时请及时下载。",
+              "* Generated live via SiliconFlow multi-model API. Image links are temporary and expire in ~24h — download promptly if needed.",
             )}
           </p>
         </>

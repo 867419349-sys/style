@@ -1,17 +1,23 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import type { StyleResult } from "@/types";
 import { useI18n } from "@/lib/i18n";
 import { StyleGallery } from "./StyleGallery";
 import { UploadDropzone } from "./UploadDropzone";
+import { ExtractModal } from "./ExtractModal";
 
 export function Workbench() {
   const { t, pick } = useI18n();
-  const router = useRouter();
+  const [result, setResult] = useState<StyleResult | null>(null);
 
   function handleResult(style: StyleResult) {
-    router.push(`/result?style=${style.id}`);
+    try {
+      sessionStorage.setItem("zomo:last-extract", JSON.stringify(style));
+    } catch {
+      // sessionStorage 不可用时忽略
+    }
+    setResult(style);
   }
 
   return (
@@ -33,7 +39,7 @@ export function Workbench() {
               {[
                 pick("① 拖入或选择一张界面 / 插画图片", "① Drop or pick a UI / illustration image"),
                 pick("② 自动分析并生成风格提示词与配色", "② Auto-analyze into a style prompt + palette"),
-                pick("③ 在结果页复制 描述 / Markdown / CSS / Prompt", "③ Copy Description / Markdown / CSS / Prompt on the result page"),
+                pick("③ 弹窗展示结果，可复制 Markdown / CSS / Prompt", "③ Modal shows result — copy Markdown / CSS / Prompt"),
                 pick("④ 一键用多个文生图模型对比效果", "④ Compare across text-to-image models in one click"),
               ].map((line, i) => (
                 <li key={i} className="flex gap-3">
@@ -44,6 +50,10 @@ export function Workbench() {
           </div>
         </div>
       </section>
+
+      {result && (
+        <ExtractModal style={result} onClose={() => setResult(null)} />
+      )}
     </>
   );
 }

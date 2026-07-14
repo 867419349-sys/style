@@ -1,20 +1,43 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Download } from "lucide-react";
+import { AlertCircle, ArrowLeft, Download, Loader2 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { getStyleById } from "@/lib/styles";
-import { getModelById, mockGeneratedImage, seedFor } from "@/lib/imagegen";
+import { getModelById, generateWithModel } from "@/lib/imagegen";
 
 interface Props {
   styleId: string;
   modelId: string;
 }
 
+type GenState =
+  | { status: "loading" }
+  | { status: "done"; url: string }
+  | { status: "error"; error?: string };
+
 export function CompareDetail({ styleId, modelId }: Props) {
   const { pick } = useI18n();
   const style = getStyleById(styleId);
   const model = getModelById(modelId);
+  const [state, setState] = useState<GenState>({ status: "loading" });
+
+  const prompt = style?.prompt;
+  const apiModel = model?.apiModel;
+  useEffect(() => {
+    if (!prompt || !apiModel) return;
+    let alive = true;
+    generateWithModel(prompt, apiModel).then((r) => {
+      if (!alive) return;
+      setState(
+        r.url ? { status: "done", url: r.url } : { status: "error", error: r.error },
+      );
+    });
+    return () => {
+      alive = false;
+    };
+  }, [prompt, apiModel]);
 
   if (!style || !model) {
     return (
@@ -29,8 +52,6 @@ export function CompareDetail({ styleId, modelId }: Props) {
     );
   }
 
-  const image = mockGeneratedImage(style, model, seedFor(style.id, model.id));
-
   return (
     <div className="mx-auto max-w-6xl px-5 py-10">
       <Link
@@ -43,10 +64,30 @@ export function CompareDetail({ styleId, modelId }: Props) {
 
       <div className="mt-6 grid gap-8 lg:grid-cols-2">
         <div>
-          <div
-            className="aspect-square w-full overflow-hidden rounded-3xl border border-line"
-            style={{ background: image }}
-          />
+          <div className="relative aspect-square w-full overflow-hidden rounded-3xl border border-line bg-surface-2">
+            {state.status === "done" ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={state.url}
+                alt={model.name}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : state.status === "error" ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
+                <AlertCircle size={28} className="text-accent-ink" />
+                <span className="text-sm text-muted">
+                  {state.error ?? pick("生成失败", "Generation failed")}
+                </span>
+              </div>
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                <Loader2 size={30} className="animate-spin text-muted" />
+                <span className="text-xs text-muted">
+                  {pick("正在生成…", "Generating…")}
+                </span>
+              </div>
+            )}
+          </div>
           <div className="mt-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span
@@ -62,13 +103,20 @@ export function CompareDetail({ styleId, modelId }: Props) {
                 </div>
               </div>
             </div>
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-medium transition-colors hover:border-border-strong"
+            <a
+              href={state.status === "done" ? state.url : undefined}
+              target="_blank"
+              rel="noreferrer"
+              aria-disabled={state.status !== "done"}
+              className={`inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-medium transition-colors ${
+                state.status === "done"
+                  ? "hover:border-border-strong"
+                  : "pointer-events-none opacity-40"
+              }`}
             >
               <Download size={13} />
               {pick("下载", "Download")}
-            </button>
+            </a>
           </div>
         </div>
 
@@ -107,8 +155,8 @@ export function CompareDetail({ styleId, modelId }: Props) {
 
           <div className="rounded-2xl border border-accent-2 bg-accent-2/25 px-4 py-3 text-xs leading-relaxed text-ink">
             {pick(
-              "* 该图为原型阶段根据配色合成的占位图。接入真实文生图 API 后，这里会显示该模型用上述提示词实际生成的图片。",
-              "* This is a palette-based placeholder for the prototype. Once a real text-to-image API is connected, the actual model output for the prompt above will appear here.",
+              "* 该图由硅基流动（SiliconFlow）用上述提示词实时生成。图片为临时链接，约 24 小时后过期，请及时下载保存。",
+              "* Generated live by SiliconFlow using the prompt above. The image link is temporary and expires in ~24h — download it promptly.",
             )}
           </div>
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Download, Loader2, Maximize2 } from "lucide-react";
+import { AlertCircle, Download, Loader2, Maximize2 } from "lucide-react";
 import type { ModelResult, ModelSpec } from "@/types";
 import { useI18n } from "@/lib/i18n";
 
@@ -15,15 +15,28 @@ export function ModelCard({ model, result, href }: Props) {
   const { pick } = useI18n();
   const loading = result?.status === "loading";
   const done = result?.status === "done";
+  const errored = result?.status === "error";
 
   const media = (
     <div className="relative aspect-square w-full">
-      {done && result ? (
-        <div className="absolute inset-0" style={{ background: result.image }} />
+      {done && result?.image ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={result.image}
+          alt={model.name}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-surface-2">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-surface-2 px-3 text-center">
           {loading ? (
             <Loader2 size={26} className="animate-spin text-muted" />
+          ) : errored ? (
+            <>
+              <AlertCircle size={22} className="text-accent-ink" />
+              <span className="text-[11px] leading-tight text-muted">
+                {result?.error ?? pick("生成失败", "Generation failed")}
+              </span>
+            </>
           ) : (
             <div
               className="h-10 w-10 rounded-full opacity-40"
@@ -41,9 +54,17 @@ export function ModelCard({ model, result, href }: Props) {
               <Maximize2 size={12} />
             </span>
           )}
-          <span className="inline-flex items-center gap-1 rounded-full bg-ink/70 px-2.5 py-1 text-[11px] font-medium text-bg backdrop-blur">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (result?.image) window.open(result.image, "_blank", "noopener");
+            }}
+            className="inline-flex items-center gap-1 rounded-full bg-ink/70 px-2.5 py-1 text-[11px] font-medium text-bg backdrop-blur transition-colors hover:bg-ink"
+          >
             <Download size={12} />
-          </span>
+          </button>
         </div>
       )}
     </div>

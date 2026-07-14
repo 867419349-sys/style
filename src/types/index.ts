@@ -28,19 +28,22 @@ export interface StyleResult {
 
 export interface ModelSpec {
   id: string;
+  /** real model path passed to the SiliconFlow API, e.g. "Qwen/Qwen-Image" */
+  apiModel: string;
   name: string;
   vendor_zh: string;
   vendor_en: string;
-  /** two colors used to render the placeholder "generated" image */
+  /** two colors used as the brand chip / loading placeholder */
   swatch: [string, string];
 }
 
-export type GenStatus = "idle" | "loading" | "done";
+export type GenStatus = "idle" | "loading" | "done" | "error";
 
 export interface ModelResult {
   modelId: string;
   status: GenStatus;
-  /** CSS background used as the mock generated image */
+  /** real generated image URL (SiliconFlow temporary link, ~24h) */
   image: string;
-  seed: number;
+  /** error message when status === "error" */
+  error?: string;
 }
