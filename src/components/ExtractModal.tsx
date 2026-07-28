@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BookmarkPlus, Check, Copy, FolderPlus, Library, Loader2, Wand2, X } from "lucide-react";
+import { BookmarkPlus, Check, ChevronDown, ChevronLeft, ChevronUp, Copy, Download, FolderPlus, Loader2, Wand2, X } from "lucide-react";
 import type { ModelResult, StyleResult } from "@/types";
 import { useI18n } from "@/lib/i18n";
 import { MODELS, generateWithModel } from "@/lib/imagegen";
-import { getLibraries, createLibrary, addToDefault } from "@/lib/userStyles";
+import { getKey, hasKey } from "@/lib/settings";
+import { getLibraries, createLibrary, addToDefault, addImageToStyle, copyBuiltinToDefault, getDefaultStyles } from "@/lib/userStyles";
 import type { UserLibrary } from "@/lib/userStyles";
+import { STYLES } from "@/lib/styles";
 import { PaletteSwatches } from "./PaletteSwatches";
 
 interface Props {
@@ -51,20 +53,27 @@ export function ExtractModal({ style, onClose }: Props) {
   const [genResults, setGenResults] = useState<Record<string, ModelResult>>({});
   const [genRunning, setGenRunning] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [prompt, setPrompt] = useState(style.prompt_zh ?? style.prompt);
+  const [analysisOpen, setAnalysisOpen] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [showNewLibInput, setShowNewLibInput] = useState(false);
+  const [showStylesList, setShowStylesList] = useState(false);
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [aspect, setAspect] = useState("1/1");
   const [libName, setLibName] = useState("");
-  const [libraries, setLibraries] = useState<UserLibrary[]>(() => {
-    if (typeof window === "undefined") return [];
-    return getLibraries();
-  });
+  const [libraries, setLibraries] = useState<UserLibrary[]>([]);
   const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setLibraries(getLibraries());
+  }, []);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
       if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
         setPopoverOpen(false);
         setShowNewLibInput(false);
+        setShowStylesList(false);
       }
     }
     if (popoverOpen) document.addEventListener("mousedown", onClick);
@@ -77,7 +86,7 @@ export function ExtractModal({ style, onClose }: Props) {
 
   function handleNewLibrary() {
     if (!libName.trim()) return;
-    createLibrary(libName.trim(), style);
+    createLibrary(libName.trim(), { ...style, prompt_zh: prompt });
     setSaved(true);
     setPopoverOpen(false);
     setShowNewLibInput(false);
@@ -86,22 +95,74 @@ export function ExtractModal({ style, onClose }: Props) {
   }
 
   function handleAddToDefault() {
-    addToDefault(style);
+    addToDefault({ ...style, prompt_zh: prompt });
     setSaved(true);
     setPopoverOpen(false);
     refreshLibs();
   }
 
+  async function downloadImage(url: string, filename: string) {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      window.open(url, "_blank");
+    }
+  }
+
+  function handleAddImageToExisting(targetStyleId: string) {
+    const imageData = style.image ?? style.images?.[0];
+    if (!imageData) return;
+
+    const ok = addImageToStyle(targetStyleId, imageData);
+    if (!ok) {
+      const builtin = STYLES.find((s) => s.id === targetStyleId);
+      if (builtin) {
+        copyBuiltinToDefault(builtin, imageData);
+      }
+    }
+    setSaved(true);
+    setPopoverOpen(false);
+    setShowStylesList(false);
+    refreshLibs();
+  }
+
+  const ASPECT_SIZES: Record<string, string> = {
+    "1/1": "1024x1024",
+    "4/5": "1024x1280",
+    "9/16": "720x1280",
+    "16/9": "1280x720",
+    "2.35:1": "1280x544",
+  };
+
   async function runGen() {
+    if (!hasKey()) {
+      setGenResults(
+        Object.fromEntries(
+          MODELS.map((m) => [m.id, { modelId: m.id, status: "error", image: "", error: pick("请先在右上角设置中填入硅基流动 API Key。", "Please enter your SiliconFlow API Key in settings first.") } as ModelResult]),
+        ),
+      );
+      return;
+    }
     setGenRunning(true);
     setGenResults(
       Object.fromEntries(
         MODELS.map((m) => [m.id, { modelId: m.id, status: "loading", image: "" } as ModelResult]),
       ),
     );
+    const imageSize = ASPECT_SIZES[aspect] ?? "1024x1024";
+    const genPrompt = style.prompt_zh || style.prompt || prompt;
     await Promise.all(
       MODELS.map(async (m) => {
-        const r = await generateWithModel(style.prompt, m.apiModel);
+        const r = await generateWithModel(genPrompt, m.apiModel, imageSize, getKey(), style.negative_prompt);
         setGenResults((prev) => ({
           ...prev,
           [m.id]: {
@@ -184,10 +245,41 @@ export function ExtractModal({ style, onClose }: Props) {
             )}
           </div>
 
+          {/* 主体描述 */}
+          {(style.subject_zh || style.subject_en) ? (
+            <div className="rounded-lg border border-accent-2 bg-accent-2/10 px-3 py-2">
+              <div className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-accent-ink">
+                {pick("主体 / 角色", "Subject / Character")}
+              </div>
+              <p className="text-xs leading-relaxed text-ink">
+                {pick(style.subject_zh, style.subject_en)}
+              </p>
+            </div>
+          ) : null}
+
           {/* 中文描述 */}
           <p className="line-clamp-2 text-sm leading-relaxed text-muted">
             {pick(style.description_zh, style.description_en)}
           </p>
+
+          {/* AI 逐项分析（可展开） */}
+          {style.analysis_zh && (
+            <div>
+              <button
+                type="button"
+                onClick={() => setAnalysisOpen(!analysisOpen)}
+                className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-muted hover:text-ink transition-colors"
+              >
+                {analysisOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                {pick("AI 分析详情", "AI Analysis Details")}
+              </button>
+              {analysisOpen && (
+                <div className="mt-2 max-h-48 overflow-auto rounded-lg border border-line bg-surface-2 p-3 text-xs leading-relaxed text-muted whitespace-pre-wrap">
+                  {style.analysis_zh}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 配色 */}
           <PaletteSwatches palette={style.palette} />
@@ -200,8 +292,22 @@ export function ExtractModal({ style, onClose }: Props) {
             <div className="flex flex-wrap gap-2">
               <CopyBtn label="Markdown" content={style.markdown} />
               <CopyBtn label="CSS" content={style.css} />
-              <CopyBtn label="Prompt" content={style.prompt} />
+              <CopyBtn label="Prompt" content={prompt} />
             </div>
+          </div>
+
+          {/* 可编辑 Prompt */}
+          <div>
+            <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted">
+              {pick("编辑提示词", "Edit Prompt")}
+            </div>
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              rows={3}
+              className="w-full resize-none rounded-lg border border-line bg-surface-2 px-3 py-2 text-xs leading-relaxed text-ink outline-none focus:border-accent transition-colors placeholder:text-muted"
+              placeholder={pick("输入提示词…", "Enter prompt…")}
+            />
           </div>
 
           {/* 加入风格库 */}
@@ -220,7 +326,7 @@ export function ExtractModal({ style, onClose }: Props) {
               {saved ? pick("已加入风格库", "Saved to library") : pick("加入风格库", "Save to library")}
             </button>
             {popoverOpen && !saved && (
-              <div className="absolute bottom-full left-0 mb-2 w-48 rounded-xl border border-line bg-surface p-1.5 shadow-lg">
+              <div className="absolute bottom-full left-0 mb-2 rounded-xl border border-line bg-surface p-1.5 shadow-lg" style={{ width: 260 }}>
                 {showNewLibInput ? (
                   <div className="flex flex-col gap-2">
                     <input
@@ -250,6 +356,43 @@ export function ExtractModal({ style, onClose }: Props) {
                       </button>
                     </div>
                   </div>
+                ) : showStylesList ? (
+                  <div className="flex flex-col">
+                    <button
+                      type="button"
+                      onClick={() => setShowStylesList(false)}
+                      className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-muted transition-colors hover:bg-surface-2"
+                    >
+                      <ChevronLeft size={14} />
+                      {pick("返回", "Back")}
+                    </button>
+                    <div className="my-0.5 border-t border-line" />
+                    <div className="max-h-52 overflow-auto">
+                      {[
+                        ...STYLES.map((s) => ({ ...s, source: "builtin" as const })),
+                        ...getDefaultStyles().map((s) => ({ ...s, source: "default" as const })),
+                        ...libraries.flatMap((l) => l.styles.map((s) => ({ ...s, source: l.name }))),
+                      ].map((s) => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => handleAddImageToExisting(s.id)}
+                          className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs transition-colors hover:bg-surface-2"
+                        >
+                          <span
+                            className="h-5 w-5 shrink-0 rounded"
+                            style={{
+                              background: `linear-gradient(135deg, ${s.palette[0]?.hex ?? "#ccc"}, ${s.palette[s.palette.length - 1]?.hex ?? "#888"})`,
+                            }}
+                          />
+                          <span className="flex-1 truncate">{pick(s.name_zh, s.name_en)}</span>
+                          {s.source !== "builtin" && s.source !== "default" && (
+                            <span className="shrink-0 text-[10px] text-muted">{s.source}</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ) : (
                   <div className="flex flex-col gap-0.5">
                     <button
@@ -263,11 +406,14 @@ export function ExtractModal({ style, onClose }: Props) {
                     <div className="my-0.5 border-t border-line" />
                     <button
                       type="button"
-                      onClick={handleAddToDefault}
+                      onClick={() => {
+                        refreshLibs();
+                        setShowStylesList(true);
+                      }}
                       className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs transition-colors hover:bg-surface-2"
                     >
-                      <Library size={14} className="text-muted" />
-                      {pick("加入现有风格库", "Add to existing gallery")}
+                      <BookmarkPlus size={14} className="text-muted" />
+                      {pick("加入现有风格库", "Add to existing style")}
                     </button>
                   </div>
                 )}
@@ -281,25 +427,41 @@ export function ExtractModal({ style, onClose }: Props) {
               <span className="text-xs font-medium uppercase tracking-wide text-muted">
                 {pick("生图对比", "Generate & Compare")}
               </span>
-              <button
-                type="button"
-                onClick={runGen}
-                disabled={genRunning}
-                className="inline-flex items-center gap-1.5 rounded-full bg-ink px-3 py-1.5 text-xs font-medium text-bg transition-transform enabled:hover:-translate-y-0.5 disabled:opacity-60"
-              >
-                {genRunning ? (
-                  <Loader2 size={12} className="animate-spin" />
-                ) : (
-                  <Wand2 size={12} />
-                )}
-                {genRunning
-                  ? pick("生成中…", "Generating…")
-                  : Object.keys(genResults).length
-                    ? pick("重新生成", "Regenerate")
-                    : pick("生成图片", "Generate")}
-              </button>
+              <div className="flex items-center gap-1">
+                {["1/1", "4/5", "9/16", "16/9", "2.35:1"].map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setAspect(r)}
+                    className={`rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
+                      aspect === r
+                        ? "bg-ink text-bg"
+                        : "text-muted hover:text-ink"
+                    }`}
+                  >
+                    {r}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={runGen}
+                  disabled={genRunning}
+                  className="ml-2 inline-flex items-center gap-1.5 rounded-full bg-ink px-3 py-1.5 text-xs font-medium text-bg transition-transform enabled:hover:-translate-y-0.5 disabled:opacity-60"
+                >
+                  {genRunning ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <Wand2 size={12} />
+                  )}
+                  {genRunning
+                    ? pick("生成中…", "Generating…")
+                    : Object.keys(genResults).length
+                      ? pick("重新生成", "Regenerate")
+                      : pick("生成图片", "Generate")}
+                </button>
+              </div>
             </div>
-            <div className="grid grid-cols-4 gap-1.5">
+            <div className="grid grid-cols-3 gap-1.5">
               {MODELS.map((m) => {
                 const r = genResults[m.id];
                 return (
@@ -307,13 +469,14 @@ export function ExtractModal({ style, onClose }: Props) {
                     key={m.id}
                     className="overflow-hidden rounded-lg border border-line bg-surface-2"
                   >
-                    <div className="aspect-[5/4] w-full">
+                    <div className="w-full" style={{ aspectRatio: aspect.replace(":", "/") }}>
                       {r?.status === "done" && r.image ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={r.image}
                           alt={m.name}
-                          className="h-full w-full object-cover"
+                          className="h-full w-full cursor-pointer object-cover"
+                          onClick={() => setZoomedImage(r.image)}
                         />
                       ) : r?.status === "loading" ? (
                         <div className="flex h-full w-full items-center justify-center">
@@ -337,7 +500,17 @@ export function ExtractModal({ style, onClose }: Props) {
                           background: `linear-gradient(135deg, ${m.swatch[0]}, ${m.swatch[1]})`,
                         }}
                       />
-                      <span className="truncate text-[10px] font-medium">{m.name}</span>
+                      <span className="flex-1 truncate text-[10px] font-medium">{m.name}</span>
+                      {r?.status === "done" && r.image && (
+                        <button
+                          type="button"
+                          onClick={() => downloadImage(r.image, `${m.id}-${Date.now()}.png`)}
+                          className="shrink-0 rounded p-0.5 text-muted transition-colors hover:text-ink"
+                          title={pick("下载", "Download")}
+                        >
+                          <Download size={12} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -354,6 +527,29 @@ export function ExtractModal({ style, onClose }: Props) {
           </p>
         </div>
       </div>
+
+      {/* 图片放大 */}
+      {zoomedImage && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-8"
+          onClick={() => setZoomedImage(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setZoomedImage(null)}
+            className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white transition-colors hover:bg-black/60"
+          >
+            <X size={18} />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={zoomedImage}
+            alt="preview"
+            className="max-h-full max-w-full rounded-xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }

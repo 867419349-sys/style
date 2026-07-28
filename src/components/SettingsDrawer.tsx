@@ -1,27 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { X } from "lucide-react";
+import { X, Key, Eye, EyeOff, ExternalLink } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import { MODELS } from "@/lib/imagegen";
-import { loadKeys, saveKeys, type ApiKeys } from "@/lib/settings";
+import { getKey, saveKey } from "@/lib/settings";
 
 interface Props {
   onClose: () => void;
 }
 
 export function SettingsDrawer({ onClose }: Props) {
-  const { t, pick } = useI18n();
-  const [keys, setKeys] = useState<ApiKeys>(() => loadKeys());
+  const { t } = useI18n();
+  const [key, setKey] = useState(() => getKey());
   const [saved, setSaved] = useState(false);
-
-  function update(next: ApiKeys) {
-    setKeys(next);
-    setSaved(false);
-  }
+  const [showKey, setShowKey] = useState(false);
 
   function handleSave() {
-    saveKeys(keys);
+    saveKey(key);
     setSaved(true);
     setTimeout(() => setSaved(false), 1600);
   }
@@ -47,53 +42,39 @@ export function SettingsDrawer({ onClose }: Props) {
 
         <div className="scroll-slim flex-1 space-y-5 overflow-auto px-5 py-5">
           <div className="flex items-start gap-2 rounded-xl border border-accent-2 bg-accent-2/25 px-3 py-2.5 text-xs leading-relaxed text-ink">
-            <span className="mt-0.5 shrink-0 rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-bg">
-              {t("mockBadge")}
-            </span>
+            <Key size={14} className="mt-0.5 shrink-0 text-accent" />
             <span>{t("settingsNote")}</span>
           </div>
 
           <label className="block">
             <span className="mb-1.5 block text-sm font-medium">{t("visionKey")}</span>
-            <input
-              type="password"
-              value={keys.vision}
-              onChange={(e) => update({ ...keys, vision: e.target.value })}
-              placeholder="sk-..."
-              className="w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm font-mono outline-none focus:border-border-strong"
-            />
-          </label>
-
-          <div className="space-y-3">
-            <div className="text-xs font-medium uppercase tracking-wide text-muted">
-              {pick("文生图模型 Key", "Text-to-image keys")}
+            <div className="relative">
+              <input
+                type={showKey ? "text" : "password"}
+                value={key}
+                onChange={(e) => { setKey(e.target.value); setSaved(false); }}
+                placeholder="sk-..."
+                autoFocus
+                className="w-full rounded-xl border border-line bg-surface px-3 py-2.5 pr-10 text-sm font-mono outline-none focus:border-border-strong"
+              />
+              <button
+                type="button"
+                onClick={() => setShowKey(!showKey)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted transition-colors hover:text-ink"
+              >
+                {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
-            {MODELS.map((m) => (
-              <label key={m.id} className="block">
-                <span className="mb-1.5 flex items-center gap-2 text-sm font-medium">
-                  <span
-                    className="h-4 w-4 rounded"
-                    style={{
-                      background: `linear-gradient(135deg, ${m.swatch[0]}, ${m.swatch[1]})`,
-                    }}
-                  />
-                  {m.name}
-                </span>
-                <input
-                  type="password"
-                  value={keys.models[m.id] ?? ""}
-                  onChange={(e) =>
-                    update({
-                      ...keys,
-                      models: { ...keys.models, [m.id]: e.target.value },
-                    })
-                  }
-                  placeholder="sk-..."
-                  className="w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm font-mono outline-none focus:border-border-strong"
-                />
-              </label>
-            ))}
-          </div>
+            <a
+              href="https://cloud.siliconflow.cn"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex items-center gap-1 text-xs text-muted transition-colors hover:text-accent"
+            >
+              <ExternalLink size={12} />
+              {t("keyHint")}
+            </a>
+          </label>
         </div>
 
         <div className="flex items-center justify-end gap-2 border-t border-line px-5 py-4">
@@ -107,7 +88,8 @@ export function SettingsDrawer({ onClose }: Props) {
           <button
             type="button"
             onClick={handleSave}
-            className="rounded-full bg-ink px-4 py-2 text-sm font-medium text-bg"
+            disabled={!key.trim()}
+            className="rounded-full bg-ink px-4 py-2 text-sm font-medium text-bg disabled:opacity-40"
           >
             {saved ? t("copied") : t("save")}
           </button>

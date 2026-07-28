@@ -1,17 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { Settings } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { LanguageToggle } from "./LanguageToggle";
-import { SettingsDrawer } from "./SettingsDrawer";
 
 export const BRAND = "Zomo Design";
 
 export function Header() {
   const { t } = useI18n();
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-bg/80 backdrop-blur-md">
@@ -32,18 +28,8 @@ export function Header() {
 
         <div className="flex items-center gap-2">
           <LanguageToggle />
-          <button
-            type="button"
-            onClick={() => setSettingsOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-border-strong"
-          >
-            <Settings size={14} />
-            <span className="hidden sm:inline">{t("settings")}</span>
-          </button>
         </div>
       </div>
-
-      {settingsOpen && <SettingsDrawer onClose={() => setSettingsOpen(false)} />}
     </header>
   );
 }

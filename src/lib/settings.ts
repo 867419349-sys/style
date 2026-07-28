@@ -1,35 +1,19 @@
-import { MODELS } from "./imagegen";
+const STORAGE_KEY = "zomo-design-siliconflow-key";
 
-const STORAGE_KEY = "zomo-design-api-keys";
-
-export interface ApiKeys {
-  vision: string;
-  models: Record<string, string>;
-}
-
-function emptyKeys(): ApiKeys {
-  const models: Record<string, string> = {};
-  for (const m of MODELS) models[m.id] = "";
-  return { vision: "", models };
-}
-
-export function loadKeys(): ApiKeys {
-  if (typeof window === "undefined") return emptyKeys();
+export function getKey(): string {
+  if (typeof window === "undefined") return "";
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return emptyKeys();
-    const parsed = JSON.parse(raw) as Partial<ApiKeys>;
-    const base = emptyKeys();
-    return {
-      vision: parsed.vision ?? base.vision,
-      models: { ...base.models, ...(parsed.models ?? {}) },
-    };
+    return window.localStorage.getItem(STORAGE_KEY) ?? "";
   } catch {
-    return emptyKeys();
+    return "";
   }
 }
 
-export function saveKeys(keys: ApiKeys): void {
+export function hasKey(): boolean {
+  return getKey().trim().length > 0;
+}
+
+export function saveKey(key: string): void {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(keys));
+  window.localStorage.setItem(STORAGE_KEY, key.trim());
 }

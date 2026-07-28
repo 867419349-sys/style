@@ -21,6 +21,20 @@ export interface StyleResult {
   description_en: string;
   /** English prompt suitable for text-to-image models */
   prompt: string;
+  /** 中文版提示词，界面上可编辑 */
+  prompt_zh?: string;
+  /** 负向提示词（生图时排除的元素） */
+  negative_prompt?: string;
+  /** 5-10个核心风格关键词 */
+  style_keywords?: string[];
+  /** 图片中的主体/角色/物体描述 */
+  subject_zh?: string;
+  subject_en?: string;
+  /** 纯风格提示词（不含主体，可应用到任意主体上） */
+  style_prompt_zh?: string;
+  style_prompt_en?: string;
+  /** 中文逐项分析（主体/风格/色彩/光影/构图/质感/分辨率/情绪） */
+  analysis_zh?: string;
   /** derived at runtime from palette, but kept editable */
   css: string;
   markdown: string;

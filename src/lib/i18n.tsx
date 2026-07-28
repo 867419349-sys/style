@@ -70,13 +70,21 @@ const DICT: Dict = {
 
   settingsTitle: { zh: "API 设置", en: "API settings" },
   settingsNote: {
-    zh: "原型阶段：以下 Key 仅保存在你的浏览器（localStorage），暂不进行真实调用。接入真实 API 后即可生效。",
-    en: "Prototype: keys are stored only in your browser (localStorage) and are not called yet. They activate once real APIs are wired up.",
+    zh: "输入你的硅基流动（SiliconFlow）API Key，用于调用视觉模型和文生图模型。Key 仅保存在你的浏览器中。",
+    en: "Enter your SiliconFlow API Key to use vision and text-to-image models. The key is stored only in your browser.",
   },
-  visionKey: { zh: "视觉模型 Key（图片→风格）", en: "Vision model key (image→style)" },
+  visionKey: { zh: "硅基流动 API Key", en: "SiliconFlow API Key" },
+  keyHint: {
+    zh: "前往 cloud.siliconflow.cn 注册并获取 API Key",
+    en: "Visit cloud.siliconflow.cn to register and get an API Key",
+  },
+  settingsRequired: {
+    zh: "请先在右上角设置中填入硅基流动 API Key，才能使用生图和分析功能。",
+    en: "Please enter your SiliconFlow API Key in the settings (top-right) to enable image generation and analysis.",
+  },
   save: { zh: "保存", en: "Save" },
   close: { zh: "关闭", en: "Close" },
-  mockBadge: { zh: "示例数据", en: "Sample data" },
+  mockBadge: { zh: "需要 Key", en: "Key required" },
 };
 
 interface I18nValue {

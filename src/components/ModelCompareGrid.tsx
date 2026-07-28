@@ -5,6 +5,7 @@ import { RefreshCw, Wand2 } from "lucide-react";
 import type { ModelResult, StyleResult } from "@/types";
 import { useI18n } from "@/lib/i18n";
 import { MODELS, generateWithModel } from "@/lib/imagegen";
+import { getKey, hasKey } from "@/lib/settings";
 import { ModelCard } from "./ModelCard";
 
 export function ModelCompareGrid({ style }: { style: StyleResult | null }) {
@@ -22,6 +23,17 @@ export function ModelCompareGrid({ style }: { style: StyleResult | null }) {
 
   const runAll = useCallback(async () => {
     if (!style) return;
+    if (!hasKey()) {
+      setResults(
+        Object.fromEntries(
+          MODELS.map((m) => [
+            m.id,
+            { modelId: m.id, status: "error", image: "", error: pick("请先在右上角设置中填入硅基流动 API Key。", "Please enter your SiliconFlow API Key in settings first.") } as ModelResult,
+          ]),
+        ),
+      );
+      return;
+    }
     setRunning(true);
     // mark all loading
     setResults(
@@ -34,7 +46,8 @@ export function ModelCompareGrid({ style }: { style: StyleResult | null }) {
     );
     await Promise.all(
       MODELS.map(async (m) => {
-        const r = await generateWithModel(style.prompt, m.apiModel);
+        const genPrompt = style.prompt_zh || style.prompt;
+        const r = await generateWithModel(genPrompt, m.apiModel, undefined, getKey(), style.negative_prompt);
         setResults((prev) => ({
           ...prev,
           [m.id]: {
@@ -85,9 +98,9 @@ export function ModelCompareGrid({ style }: { style: StyleResult | null }) {
         <>
           <div className="mb-4 rounded-xl border border-line bg-surface px-4 py-3 text-xs text-muted">
             <span className="font-medium text-ink">Prompt · </span>
-            {style.prompt}
+            {style.prompt_zh || style.prompt}
           </div>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
             {MODELS.map((m) => (
               <ModelCard
                 key={m.id}

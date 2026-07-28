@@ -3,13 +3,20 @@
 import Link from "next/link";
 import type { StyleResult } from "@/types";
 import { useI18n } from "@/lib/i18n";
+import { X } from "lucide-react";
 
-export function StyleCard({ style }: { style: StyleResult }) {
+interface Props {
+  style: StyleResult;
+  onDelete?: () => void;
+}
+
+export function StyleCard({ style, onDelete }: Props) {
   const { pick } = useI18n();
+
   return (
     <Link
       href={`/style/${style.id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-line text-left transition-all hover:-translate-y-1 hover:border-border-strong"
+      className="group relative flex flex-col overflow-hidden rounded-2xl border border-line text-left transition-all hover:-translate-y-1 hover:border-border-strong"
     >
       <div className="relative h-32 w-full" style={{ background: style.thumb }}>
         {style.image && (
@@ -38,6 +45,19 @@ export function StyleCard({ style }: { style: StyleResult }) {
           {pick(style.tagline_zh, style.tagline_en)}
         </div>
       </div>
+      {onDelete && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="absolute right-1.5 top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-black/40 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500"
+        >
+          <X size={11} />
+        </button>
+      )}
     </Link>
   );
 }

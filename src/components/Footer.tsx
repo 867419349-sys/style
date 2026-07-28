@@ -11,8 +11,8 @@ export function Footer() {
         <span className="font-display text-base text-ink">{BRAND}</span>
         <span>
           {pick(
-            "设计风格提取原型 · 示例数据，未接入真实模型",
-            "Design style extractor prototype · sample data, no live model",
+            "AI 驱动的设计风格分析 · 硅基流动多模型生图",
+            "AI-powered design style analysis · SiliconFlow multi-model generation",
           )}
         </span>
       </div>

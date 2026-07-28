@@ -4,7 +4,7 @@ export const MODELS: ModelSpec[] = [
   {
     id: "z-image",
     apiModel: "Tongyi-MAI/Z-Image-Turbo",
-    name: "通义 Z-Image",
+    name: "Z-Image Turbo",
     vendor_zh: "阿里通义",
     vendor_en: "Alibaba Tongyi",
     swatch: ["#6d5cff", "#12e6e6"],
@@ -33,6 +33,14 @@ export const MODELS: ModelSpec[] = [
     vendor_en: "Kuaishou",
     swatch: ["#ff5964", "#ffd23f"],
   },
+  {
+    id: "z-image-pro",
+    apiModel: "Tongyi-MAI/Z-Image",
+    name: "Z-Image",
+    vendor_zh: "阿里通义",
+    vendor_en: "Alibaba Tongyi",
+    swatch: ["#4a3aff", "#ff6b9d"],
+  },
 ];
 
 export interface GenerateResult {
@@ -47,12 +55,15 @@ export interface GenerateResult {
 export async function generateWithModel(
   prompt: string,
   apiModel: string,
+  imageSize?: string,
+  apiKey?: string,
+  negativePrompt?: string,
 ): Promise<GenerateResult> {
   try {
     const res = await fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt, model: apiModel }),
+      body: JSON.stringify({ prompt, model: apiModel, image_size: imageSize, api_key: apiKey, negative_prompt: negativePrompt }),
     });
     const data = await res.json().catch(() => null);
     if (!res.ok) return { error: data?.error ?? `生成失败（${res.status}）` };

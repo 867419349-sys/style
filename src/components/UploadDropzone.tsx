@@ -5,6 +5,7 @@ import { ImagePlus, Loader2, RefreshCw } from "lucide-react";
 import type { StyleResult } from "@/types";
 import { useI18n } from "@/lib/i18n";
 import { extractStyle } from "@/lib/extract";
+import { getKey, hasKey } from "@/lib/settings";
 
 interface Props {
   onResult: (style: StyleResult) => void;
@@ -20,12 +21,16 @@ export function UploadDropzone({ onResult }: Props) {
   const handleFile = useCallback(
     async (file: File) => {
       if (!file.type.startsWith("image/")) return;
+      if (!hasKey()) {
+        setError(pick("请先在右上角设置中填入硅基流动 API Key。", "Please enter your SiliconFlow API Key in settings first."));
+        return;
+      }
       const url = URL.createObjectURL(file);
       setPreview(url);
       setError(null);
       setLoading(true);
       try {
-        const result = await extractStyle(file);
+        const result = await extractStyle(file, getKey());
         onResult(result);
       } catch (e) {
         setError(

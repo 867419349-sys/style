@@ -23,12 +23,12 @@ async function fileToDataUrl(file: File, max = 1024): Promise<string> {
  * 真实提取：上传图片 → 视觉模型（Qwen3-VL，经服务端路由，Key 保密）
  * → 返回结构化的设计风格结果。
  */
-export async function extractStyle(file: File): Promise<StyleResult> {
+export async function extractStyle(file: File, apiKey?: string): Promise<StyleResult> {
   const image = await fileToDataUrl(file);
   const res = await fetch("/api/extract", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ image }),
+    body: JSON.stringify({ image, api_key: apiKey }),
   });
   const data = await res.json().catch(() => null);
   if (!res.ok || !data?.style) {
